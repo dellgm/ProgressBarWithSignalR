@@ -24,9 +24,9 @@ namespace ProgressBarWithSignalR.Controllers
 
     public class ProgressController : Controller
     {
-        private readonly IHubContext<ProgressHub> _progressHubContext;
+        private readonly IHubContext<ProgressHub, IProgressHubClient> _progressHubContext;
 
-        public ProgressController(IHubContext<ProgressHub> progressHubContext)
+        public ProgressController(IHubContext<ProgressHub, IProgressHubClient> progressHubContext)
         {
             _progressHubContext = progressHubContext;
         }
@@ -36,8 +36,7 @@ namespace ProgressBarWithSignalR.Controllers
             var steps = new Random().Next(3, 99);
             var increase = (int)100 / steps;
 
-            // NOTIFY START
-            _progressHubContext.Clients.Client(connId).SendAsync("initProgressBar");
+            _progressHubContext.Clients.Client(connId).InitProgressBar();
 
             var total = 0;
 
@@ -46,22 +45,20 @@ namespace ProgressBarWithSignalR.Controllers
                 Thread.Sleep(500);
                 total += increase;
 
-                // PROGRESS
-                _progressHubContext.Clients.Client(connId).SendAsync("updateProgressBar", total);
+                _progressHubContext.Clients.Client(connId).UpdateProgressBar(total);
             }
 
-            // NOTIFY END
-            _progressHubContext.Clients.Client(connId).SendAsync("clearProgressBar");
+            _progressHubContext.Clients.Client(connId).ClearProgressBar();
         }
 
-
         public string Conn { get; set; }
+
         public async Task Taskytis([Bind(Prefix = "id")] string connId)
         {
             Conn = connId;
             var j = new Job();
 
-            await _progressHubContext.Clients.Client(connId).SendAsync("initProgressBar");
+            await _progressHubContext.Clients.Client(Conn).InitProgressBar();
 
             var progress = new MyProgress<ReportModel>();
             progress.ProgressChanged += Progress_ProgressChanged;
@@ -71,11 +68,11 @@ namespace ProgressBarWithSignalR.Controllers
 
         private void Progress_ProgressChanged(object sender, ReportModel e)
         {
-            _progressHubContext.Clients.Client(Conn).SendAsync("updateProgressBar", e.PercentCompleted);
+            _progressHubContext.Clients.Client(Conn).UpdateProgressBar(e.PercentCompleted);
 
-            if(e.PercentCompleted == 100)
+            if (e.PercentCompleted == 100)
             {
-                _progressHubContext.Clients.Client(Conn).SendAsync("clearProgressBar");
+                _progressHubContext.Clients.Client(Conn).ClearProgressBar();
             }
         }
     }

@@ -29,7 +29,7 @@
                 .start()
                 .then(() => {
 
-                    progressConnection.on("connected", function (connectionId) {
+                    progressConnection.on("Connected", function (connectionId) {
                         progressConnectionId = connectionId;
                         $("#connId").html(connectionId);
                     });
@@ -64,20 +64,24 @@
         // that also on demand. It's up to you, in the end.
         openConnection();
 
-        progressConnection.on("updateCount", (num) => {
+        progressConnection.on("UpdateCount", (num) => {
             $("#count").html(num);
         });
 
-        progressConnection.on("initProgressBar", () => {
+        progressConnection.on("InitProgressBar", () => {
             setProgress(0);
             $("#notification").show();
         });
 
-        progressConnection.on("updateProgressBar", (perc) => {
+        progressConnection.invoke("InitProgress").catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        progressConnection.on("UpdateProgressBar", (perc) => {
             setProgress(perc);
         });
 
-        progressConnection.on("clearProgressBar", () => {
+        progressConnection.on("ClearProgressBar", () => {
             setProgress(100);
             window.setTimeout(function () {
                 $("#notification").hide();

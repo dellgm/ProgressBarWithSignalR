@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace ProgressBarWithSignalR.Hubs
 {
-    public class ProgressHub : Hub
+    public class ProgressHub : Hub<IProgressHubClient>
     {
-        private static int _connectionsCount = 0;
+        private int _connectionsCount = 0;
 
         public override Task OnConnectedAsync()
         {
-            Clients.All.SendAsync("updateCount", Interlocked.Increment(ref _connectionsCount));
-            Clients.All.SendAsync("connected", Context.ConnectionId);
+            Clients.All.UpdateCount(Interlocked.Increment(ref _connectionsCount));
+            Clients.All.Connected(Context.ConnectionId);
 
             base.OnConnectedAsync();
 
@@ -23,11 +23,26 @@ namespace ProgressBarWithSignalR.Hubs
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            Clients.All.SendAsync("updateCount", Interlocked.Decrement(ref _connectionsCount));
+            Clients.All.UpdateCount(Interlocked.Decrement(ref _connectionsCount));
 
             base.OnDisconnectedAsync(exception);
 
             return Task.CompletedTask;
+        }
+
+        public Task InitProgress()
+        {
+            return Clients.Caller.InitProgressBar();
+        }
+
+        public Task UpdateProgress(int progress)
+        {
+            return Clients.Caller.UpdateProgressBar(progress);
+        }
+
+        public Task ClearProgress()
+        {
+            return Clients.Caller.ClearProgressBar();
         }
     }
 }
